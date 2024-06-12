@@ -46,13 +46,14 @@ class MyApp extends StatelessWidget {
         path: '/',
         builder: (context, state) => const HomeScreen(),
       ),
-      GoRoute(
-        path: '/manage-budget-entry',
-        name: 'manage',
-        builder: (context, state) => ManageBudgetEntryScreen(
-          budgetEntry: state.extra as BudgetEntry?,
-        ),
-      ),
+      // Can add the robot detail screen here later
+      // GoRoute(
+      //   path: '/manage-budget-entry',
+      //   name: 'manage',
+      //   builder: (context, state) => ManageBudgetEntryScreen(
+      //     budgetEntry: state.extra as BudgetEntry?,
+      //   ),
+      // ),
     ],
   );
 
@@ -81,329 +82,342 @@ class LoadingScreen extends StatelessWidget {
   }
 }
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  var _budgetEntries = <BudgetEntry>[];
-
-  @override
-  void initState() {
-    super.initState();
-    _refreshBudgetEntries();
-  }
-
-  Future<void> _refreshBudgetEntries() async {
-    try {
-      final request = ModelQueries.list(BudgetEntry.classType);
-      final response = await Amplify.API.query(request: request).response;
-
-      final todos = response.data?.items;
-      if (response.hasErrors) {
-        safePrint('errors: ${response.errors}');
-        return;
-      }
-      setState(() {
-        _budgetEntries = todos!.whereType<BudgetEntry>().toList();
-      });
-    } on ApiException catch (e) {
-      safePrint('Query failed: $e');
-    }
-  }
-
-  Future<void> _deleteBudgetEntry(BudgetEntry budgetEntry) async {
-    final request = ModelMutations.delete<BudgetEntry>(budgetEntry);
-    final response = await Amplify.API.mutate(request: request).response;
-    safePrint('Delete response: $response');
-    await _refreshBudgetEntries();
-  }
-
-  Future<void> _navigateToBudgetEntry({BudgetEntry? budgetEntry}) async {
-    await context.pushNamed('manage', extra: budgetEntry);
-    // Refresh the entries when returning from the
-    // budget entry screen.
-    await _refreshBudgetEntries();
-  }
-
-  double _calculateTotalBudget(List<BudgetEntry?> items) {
-    var totalAmount = 0.0;
-    for (final item in items) {
-      totalAmount += item?.amount ?? 0;
-    }
-    return totalAmount;
-  }
-
-  Widget _buildRow({
-    required String title,
-    required String description,
-    required String amount,
-    TextStyle? style,
-  }) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            title,
-            textAlign: TextAlign.center,
-            style: style,
-          ),
-        ),
-        Expanded(
-          child: Text(
-            description,
-            textAlign: TextAlign.center,
-            style: style,
-          ),
-        ),
-        Expanded(
-          child: Text(
-            amount,
-            textAlign: TextAlign.center,
-            style: style,
-          ),
-        ),
-      ],
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        // Navigate to the page to create new budget entries
-        onPressed: _navigateToBudgetEntry,
-        child: const Icon(Icons.add),
-      ),
-      appBar: AppBar(
-        title: const Text('Budget Tracker'),
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.only(top: 25),
-          child: RefreshIndicator(
-            onRefresh: _refreshBudgetEntries,
-            child: Column(
-              children: [
-                if (_budgetEntries.isEmpty)
-                  const Text('Use the \u002b sign to add new budget entries')
-                else
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Show total budget from the list of all BudgetEntries
-                      Text(
-                        'Total Budget: \$ ${_calculateTotalBudget(_budgetEntries).toStringAsFixed(2)}',
-                        style: const TextStyle(fontSize: 24),
-                      )
-                    ],
-                  ),
-                const SizedBox(height: 30),
-                _buildRow(
-                  title: 'Title',
-                  description: 'Description',
-                  amount: 'Amount',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const Divider(),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: _budgetEntries.length,
-                    itemBuilder: (context, index) {
-                      final budgetEntry = _budgetEntries[index];
-                      return Dismissible(
-                        key: ValueKey(budgetEntry),
-                        background: const ColoredBox(
-                          color: Colors.red,
-                          child: Padding(
-                            padding: EdgeInsets.only(right: 10),
-                            child: Align(
-                              alignment: Alignment.centerRight,
-                              child: Icon(Icons.delete, color: Colors.white),
-                            ),
-                          ),
-                        ),
-                        onDismissed: (_) => _deleteBudgetEntry(budgetEntry),
-                        child: ListTile(
-                          onTap: () => _navigateToBudgetEntry(
-                            budgetEntry: budgetEntry,
-                          ),
-                          title: _buildRow(
-                            title: budgetEntry.title,
-                            description: budgetEntry.description ?? '',
-                            amount:
-                                '\$ ${budgetEntry.amount.toStringAsFixed(2)}',
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+    return Container(color: const Color(0xFF2DBD3A));
   }
 }
 
-class ManageBudgetEntryScreen extends StatefulWidget {
-  const ManageBudgetEntryScreen({
-    required this.budgetEntry,
-    super.key,
-  });
+// class HomeScreen extends StatefulWidget {
+//   const HomeScreen({super.key});
 
-  final BudgetEntry? budgetEntry;
+//   @override
+//   // State<HomeScreen> createState() => _HomeScreenState();
+// }
 
-  @override
-  State<ManageBudgetEntryScreen> createState() =>
-      _ManageBudgetEntryScreenState();
-}
+// class _HomeScreenState extends State<HomeScreen> {
+//   var _budgetEntries = <BudgetEntry>[];
 
-class _ManageBudgetEntryScreenState extends State<ManageBudgetEntryScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _amountController = TextEditingController();
+//   @override
+//   void initState() {
+//     super.initState();
+//     _refreshBudgetEntries();
+//   }
 
-  late final String _titleText;
+//   Future<void> _refreshBudgetEntries() async {
+//     try {
+//       final request = ModelQueries.list(BudgetEntry.classType);
+//       final response = await Amplify.API.query(request: request).response;
 
-  bool get _isCreate => _budgetEntry == null;
-  BudgetEntry? get _budgetEntry => widget.budgetEntry;
+//       final todos = response.data?.items;
+//       if (response.hasErrors) {
+//         safePrint('errors: ${response.errors}');
+//         return;
+//       }
+//       setState(() {
+//         _budgetEntries = todos!.whereType<BudgetEntry>().toList();
+//       });
+//     } on ApiException catch (e) {
+//       safePrint('Query failed: $e');
+//     }
+//   }
 
-  @override
-  void initState() {
-    super.initState();
+  // Future<void> _deleteBudgetEntry(BudgetEntry budgetEntry) async {
+  //   final request = ModelMutations.delete<BudgetEntry>(budgetEntry);
+  //   final response = await Amplify.API.mutate(request: request).response;
+  //   safePrint('Delete response: $response');
+  //   await _refreshBudgetEntries();
+  // }
 
-    final budgetEntry = _budgetEntry;
-    if (budgetEntry != null) {
-      _titleController.text = budgetEntry.title;
-      _descriptionController.text = budgetEntry.description ?? '';
-      _amountController.text = budgetEntry.amount.toStringAsFixed(2);
-      _titleText = 'Update budget entry';
-    } else {
-      _titleText = 'Create budget entry';
-    }
-  }
+  // Build something similar to render list of robot details
 
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
-    _amountController.dispose();
-    super.dispose();
-  }
+  // Future<void> _navigateToBudgetEntry({BudgetEntry? budgetEntry}) async {
+  //   await context.pushNamed('manage', extra: budgetEntry);
+  //   // Refresh the entries when returning from the
+  //   // budget entry screen.
+  //   await _refreshBudgetEntries();
+  // }
 
-  Future<void> submitForm() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+  // double _calculateTotalBudget(List<BudgetEntry?> items) {
+  //   var totalAmount = 0.0;
+  //   for (final item in items) {
+  //     totalAmount += item?.amount ?? 0;
+  //   }
+  //   return totalAmount;
+  // }
 
-    // If the form is valid, submit the data
-    final title = _titleController.text;
-    final description = _descriptionController.text;
-    final amount = double.parse(_amountController.text);
+  // Use something similar to format the list of robots
 
-    if (_isCreate) {
-      // Create a new budget entry
-      final newEntry = BudgetEntry(
-        title: title,
-        description: description.isNotEmpty ? description : null,
-        amount: amount,
-      );
-      final request = ModelMutations.create(newEntry);
-      final response = await Amplify.API.mutate(request: request).response;
-      safePrint('Create result: $response');
-    } else {
-      // Update budgetEntry instead
-      final updateBudgetEntry = _budgetEntry!.copyWith(
-        title: title,
-        description: description.isNotEmpty ? description : null,
-        amount: amount,
-      );
-      final request = ModelMutations.update(updateBudgetEntry);
-      final response = await Amplify.API.mutate(request: request).response;
-      safePrint('Update result: $response');
-    }
+  // Widget _buildRow({
+  //   required String title,
+  //   required String description,
+  //   required String amount,
+  //   TextStyle? style,
+  // }) {
+  //   return Row(
+  //     children: [
+  //       Expanded(
+  //         child: Text(
+  //           title,
+  //           textAlign: TextAlign.center,
+  //           style: style,
+  //         ),
+  //       ),
+  //       Expanded(
+  //         child: Text(
+  //           description,
+  //           textAlign: TextAlign.center,
+  //           style: style,
+  //         ),
+  //       ),
+  //       Expanded(
+  //         child: Text(
+  //           amount,
+  //           textAlign: TextAlign.center,
+  //           style: style,
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
 
-    // Navigate back to homepage after create/update executes
-    if (mounted) {
-      context.pop();
-    }
-  }
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       floatingActionButton: FloatingActionButton(
+//         // Navigate to the page to create new budget entries
+//         onPressed: _navigateToBudgetEntry,
+//         child: const Icon(Icons.add),
+//       ),
+//       appBar: AppBar(
+//         title: const Text('Budget Tracker'),
+//       ),
+//       body: Center(
+//         child: Padding(
+//           padding: const EdgeInsets.only(top: 25),
+//           child: RefreshIndicator(
+//             onRefresh: _refreshBudgetEntries,
+//             child: Column(
+//               children: [
+//                 if (_budgetEntries.isEmpty)
+//                   const Text('Use the \u002b sign to add new budget entries')
+//                 else
+//                   Row(
+//                     mainAxisAlignment: MainAxisAlignment.center,
+//                     children: [
+//                       // Show total budget from the list of all BudgetEntries
+//                       Text(
+//                         'Total Budget: \$ ${_calculateTotalBudget(_budgetEntries).toStringAsFixed(2)}',
+//                         style: const TextStyle(fontSize: 24),
+//                       )
+//                     ],
+//                   ),
+//                 const SizedBox(height: 30),
+//                 _buildRow(
+//                   title: 'Title',
+//                   description: 'Description',
+//                   amount: 'Amount',
+//                   style: Theme.of(context).textTheme.titleMedium,
+//                 ),
+//                 const Divider(),
+//                 Expanded(
+//                   child: ListView.builder(
+//                     itemCount: _budgetEntries.length,
+//                     itemBuilder: (context, index) {
+//                       final budgetEntry = _budgetEntries[index];
+//                       return Dismissible(
+//                         key: ValueKey(budgetEntry),
+//                         background: const ColoredBox(
+//                           color: Colors.red,
+//                           child: Padding(
+//                             padding: EdgeInsets.only(right: 10),
+//                             child: Align(
+//                               alignment: Alignment.centerRight,
+//                               child: Icon(Icons.delete, color: Colors.white),
+//                             ),
+//                           ),
+//                         ),
+//                         onDismissed: (_) => _deleteBudgetEntry(budgetEntry),
+//                         child: ListTile(
+//                           onTap: () => _navigateToBudgetEntry(
+//                             budgetEntry: budgetEntry,
+//                           ),
+//                           title: _buildRow(
+//                             title: budgetEntry.title,
+//                             description: budgetEntry.description ?? '',
+//                             amount:
+//                                 '\$ ${budgetEntry.amount.toStringAsFixed(2)}',
+//                           ),
+//                         ),
+//                       );
+//                     },
+//                   ),
+//                 ),
+//               ],
+//             ),
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_titleText),
-      ),
-      body: Align(
-        alignment: Alignment.topCenter,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 800),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: SingleChildScrollView(
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextFormField(
-                      controller: _titleController,
-                      decoration: const InputDecoration(
-                        labelText: 'Title (required)',
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter a title';
-                        }
-                        return null;
-                      },
-                    ),
-                    TextFormField(
-                      controller: _descriptionController,
-                      decoration: const InputDecoration(
-                        labelText: 'Description',
-                      ),
-                    ),
-                    TextFormField(
-                      controller: _amountController,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        signed: false,
-                        decimal: true,
-                      ),
-                      decoration: const InputDecoration(
-                        labelText: 'Amount (required)',
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter an amount';
-                        }
-                        final amount = double.tryParse(value);
-                        if (amount == null || amount <= 0) {
-                          return 'Please enter a valid amount';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: submitForm,
-                      child: Text(_titleText),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
+// class ManageBudgetEntryScreen extends StatefulWidget {
+//   const ManageBudgetEntryScreen({
+//     required this.budgetEntry,
+//     super.key,
+//   });
+
+//   final BudgetEntry? budgetEntry;
+
+//   @override
+//   State<ManageBudgetEntryScreen> createState() =>
+//       _ManageBudgetEntryScreenState();
+// }
+
+// class _ManageBudgetEntryScreenState extends State<ManageBudgetEntryScreen> {
+//   final _formKey = GlobalKey<FormState>();
+//   final TextEditingController _titleController = TextEditingController();
+//   final TextEditingController _descriptionController = TextEditingController();
+//   final TextEditingController _amountController = TextEditingController();
+
+//   late final String _titleText;
+
+//   bool get _isCreate => _budgetEntry == null;
+//   BudgetEntry? get _budgetEntry => widget.budgetEntry;
+
+//   @override
+//   void initState() {
+//     super.initState();
+
+//     final budgetEntry = _budgetEntry;
+//     if (budgetEntry != null) {
+//       _titleController.text = budgetEntry.title;
+//       _descriptionController.text = budgetEntry.description ?? '';
+//       _amountController.text = budgetEntry.amount.toStringAsFixed(2);
+//       _titleText = 'Update budget entry';
+//     } else {
+//       _titleText = 'Create budget entry';
+//     }
+//   }
+
+//   @override
+//   void dispose() {
+//     _titleController.dispose();
+//     _descriptionController.dispose();
+//     _amountController.dispose();
+//     super.dispose();
+//   }
+
+//   Future<void> submitForm() async {
+//     if (!_formKey.currentState!.validate()) {
+//       return;
+//     }
+
+//     // If the form is valid, submit the data
+//     final title = _titleController.text;
+//     final description = _descriptionController.text;
+//     final amount = double.parse(_amountController.text);
+
+//     if (_isCreate) {
+//       // Create a new budget entry
+//       final newEntry = BudgetEntry(
+//         title: title,
+//         description: description.isNotEmpty ? description : null,
+//         amount: amount,
+//       );
+//       final request = ModelMutations.create(newEntry);
+//       final response = await Amplify.API.mutate(request: request).response;
+//       safePrint('Create result: $response');
+//     } else {
+//       // Update budgetEntry instead
+//       final updateBudgetEntry = _budgetEntry!.copyWith(
+//         title: title,
+//         description: description.isNotEmpty ? description : null,
+//         amount: amount,
+//       );
+//       final request = ModelMutations.update(updateBudgetEntry);
+//       final response = await Amplify.API.mutate(request: request).response;
+//       safePrint('Update result: $response');
+//     }
+
+//     // Navigate back to homepage after create/update executes
+//     if (mounted) {
+//       context.pop();
+//     }
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: Text(_titleText),
+//       ),
+//       body: Align(
+//         alignment: Alignment.topCenter,
+//         child: ConstrainedBox(
+//           constraints: const BoxConstraints(maxWidth: 800),
+//           child: Padding(
+//             padding: const EdgeInsets.all(16),
+//             child: SingleChildScrollView(
+//               child: Form(
+//                 key: _formKey,
+//                 child: Column(
+//                   crossAxisAlignment: CrossAxisAlignment.start,
+//                   children: [
+//                     TextFormField(
+//                       controller: _titleController,
+//                       decoration: const InputDecoration(
+//                         labelText: 'Title (required)',
+//                       ),
+//                       validator: (value) {
+//                         if (value == null || value.isEmpty) {
+//                           return 'Please enter a title';
+//                         }
+//                         return null;
+//                       },
+//                     ),
+//                     TextFormField(
+//                       controller: _descriptionController,
+//                       decoration: const InputDecoration(
+//                         labelText: 'Description',
+//                       ),
+//                     ),
+//                     TextFormField(
+//                       controller: _amountController,
+//                       keyboardType: const TextInputType.numberWithOptions(
+//                         signed: false,
+//                         decimal: true,
+//                       ),
+//                       decoration: const InputDecoration(
+//                         labelText: 'Amount (required)',
+//                       ),
+//                       validator: (value) {
+//                         if (value == null || value.isEmpty) {
+//                           return 'Please enter an amount';
+//                         }
+//                         final amount = double.tryParse(value);
+//                         if (amount == null || amount <= 0) {
+//                           return 'Please enter a valid amount';
+//                         }
+//                         return null;
+//                       },
+//                     ),
+//                     const SizedBox(height: 20),
+//                     ElevatedButton(
+//                       onPressed: submitForm,
+//                       child: Text(_titleText),
+//                     ),
+//                   ],
+//                 ),
+//               ),
+//             ),
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }
