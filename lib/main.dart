@@ -95,7 +95,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late Future<RobotList> futureAlbum;
+  late Future<List<Robot>> futureAlbum;
 
   @override
   void initState() {
@@ -115,13 +115,14 @@ class _HomeScreenState extends State<HomeScreen> {
           title: const Text('Robot List'),
         ),
         body: Center(
-          child: FutureBuilder<RobotList>(
+          child: FutureBuilder<List<Robot>>(
             future: futureAlbum,
             builder: (context, snapshot) {
-              if (snapshot.data!.title == null) {
-                return const Text("Unknown title");
-              } else if (snapshot.hasData) {
-                return Text(snapshot.data!.title!);
+              // ignore: avoid_print
+              print('snapshotdata: $snapshot.data');
+              if (snapshot.hasData) {
+                final robots = snapshot.data;
+                return buildRobots(robots!);
               } else if (snapshot.hasError) {
                 return Text('${snapshot.error}');
               }
@@ -136,15 +137,41 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-Future<RobotList> fetchAlbum() async {
-  final response = await http
-      .get(Uri.parse('https://jsonplaceholder.typicode.com/albums/1'));
+Widget buildRobots(List<Robot> robots) {
+  return ListView.builder(
+    itemCount: robots.length,
+    itemBuilder: (context, index) {
+      final robot = robots[index];
+      return Container(
+        color: Colors.grey.shade300,
+        margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+        height: 100,
+        width: double.maxFinite,
+        child: Row(
+          children: [
+            Expanded(flex: 1, child: Image.network(robot.title!)),
+            const SizedBox(width: 10),
+            Expanded(flex: 3, child: Text(robot.title!)),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+Future<List<Robot>> fetchAlbum() async {
+  var url = Uri.parse('https://jsonplaceholder.typicode.com/albums');
+  final response =
+      await http.get(url, headers: {"Content-Type": "application/json"});
 
   if (response.statusCode == 200) {
     // If the server did return a 200 OK response,
     // then parse the JSON.
-    return RobotList.fromJson(
-        jsonDecode(response.body) as Map<String, dynamic>);
+
+    final List body = json.decode(response.body);
+
+    return body.map((e) => Robot.fromJson(e)).toList();
   } else {
     // If the server did not return a 200 OK response,
     // then throw an exception.
@@ -152,24 +179,46 @@ Future<RobotList> fetchAlbum() async {
   }
 }
 
-class RobotList {
+class Robot {
   int? userId;
   int? id;
   String? title;
 
-  RobotList({this.userId, this.id, this.title});
+  Robot({this.userId, this.id, this.title});
 
-  RobotList.fromJson(Map<String, dynamic> json) {
+  Robot.fromJson(Map<String, dynamic> json) {
     userId = json['userId'];
     id = json['id'];
     title = json['title'];
   }
 
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['userId'] = userId;
-    data['id'] = id;
-    data['title'] = title;
-    return data;
-  }
+  // Map<String, dynamic> toJson() {
+  //   final Map<String, dynamic> data = <String, dynamic>{};
+  //   data['userId'] = userId;
+  //   data['id'] = id;
+  //   data['title'] = title;
+  //   return data;
+  // }
 }
+
+// class RobotList {
+//   int? userId;
+//   int? id;
+//   String? title;
+
+//   RobotList({this.userId, this.id, this.title});
+
+//   RobotList.fromJson(Map<String, dynamic> json) {
+//     userId = json['userId'];
+//     id = json['id'];
+//     title = json['title'];
+//   }
+
+//   Map<String, dynamic> toJson() {
+//     final Map<String, dynamic> data = <String, dynamic>{};
+//     data['userId'] = userId;
+//     data['id'] = id;
+//     data['title'] = title;
+//     return data;
+//   }
+// }
