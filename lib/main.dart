@@ -41,6 +41,8 @@ Future<void> _configureAmplify() async {
   }
 }
 
+// Main application
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -52,13 +54,13 @@ class MyApp extends StatelessWidget {
         builder: (context, state) => const HomeScreen(),
       ),
       // Can add the robot detail screen here later
-      // GoRoute(
-      //   path: '/manage-budget-entry',
-      //   name: 'manage',
-      //   builder: (context, state) => ManageBudgetEntryScreen(
-      //     budgetEntry: state.extra as BudgetEntry?,
-      //   ),
-      // ),
+      GoRoute(
+        path: '/robot-details',
+        name: 'details',
+        builder: (context, state) => const SecondRoute(),
+        // ManageBudgetEntryScreen(budgetEntry: state.extra as BudgetEntry?,
+        // ),
+      ),
     ],
   );
 
@@ -69,6 +71,27 @@ class MyApp extends StatelessWidget {
         routerConfig: _router,
         debugShowCheckedModeBanner: false,
         builder: Authenticator.builder(),
+      ),
+    );
+  }
+}
+
+class SecondRoute extends StatelessWidget {
+  const SecondRoute({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Second Route'),
+      ),
+      body: Center(
+        child: ElevatedButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: const Text('Go back!'),
+        ),
       ),
     );
   }
@@ -165,6 +188,16 @@ Widget buildRobots(List<Robot> robots) {
                   Text('Map name: $mapName'),
                   Text('Created at: $createdAt'),
                   Text('Updated at: $updatedAt'),
+                  ElevatedButton(
+                    child: const Text('Robot details'),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const SecondRoute()),
+                      );
+                    },
+                  )
                 ],
               ),
             ),
