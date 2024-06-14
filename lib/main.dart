@@ -82,23 +82,49 @@ class RobotDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final robot = ModalRoute.of(context)!.settings.arguments as Robot;
+    final robotName = robot.robotName;
+    final mapId = robot.mapId;
+    final updatedAt = robot.updatedAt;
+    final createdAt = robot.createdAt;
+    final mapName = robot.mapName;
+    final robotId = robot.robotId;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Second Route'),
+        title: const Text('Robot Details'),
       ),
-      body: Column(
-        children: [
-          const Text('Example'),
-          Center(
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text(robot.robotName),
+      body: Container(
+        color: Colors.grey.shade300,
+        margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+        height: 200,
+        child: Row(
+          children: [
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+              padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Robot id: $robotId'),
+                  Text('Robot name: $robotName'),
+                  Text('Map ID: $mapId'),
+                  Text('Map name: $mapName'),
+                  Text('Created at: $createdAt'),
+                  Text('Updated at: $updatedAt'),
+                  Center(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Go back'),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
