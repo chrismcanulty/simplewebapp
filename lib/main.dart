@@ -41,6 +41,8 @@ Future<void> _configureAmplify() async {
   }
 }
 
+// Main application
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -52,13 +54,13 @@ class MyApp extends StatelessWidget {
         builder: (context, state) => const HomeScreen(),
       ),
       // Can add the robot detail screen here later
-      // GoRoute(
-      //   path: '/manage-budget-entry',
-      //   name: 'manage',
-      //   builder: (context, state) => ManageBudgetEntryScreen(
-      //     budgetEntry: state.extra as BudgetEntry?,
-      //   ),
-      // ),
+      GoRoute(
+        path: '/robot-details',
+        name: 'details',
+        builder: (context, state) => const RobotDetailsScreen(),
+        // ManageBudgetEntryScreen(budgetEntry: state.extra as BudgetEntry?,
+        // ),
+      ),
     ],
   );
 
@@ -69,6 +71,60 @@ class MyApp extends StatelessWidget {
         routerConfig: _router,
         debugShowCheckedModeBanner: false,
         builder: Authenticator.builder(),
+      ),
+    );
+  }
+}
+
+class RobotDetailsScreen extends StatelessWidget {
+  const RobotDetailsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final robot = ModalRoute.of(context)!.settings.arguments as Robot;
+    final robotName = robot.robotName;
+    final mapId = robot.mapId;
+    final updatedAt = robot.updatedAt;
+    final createdAt = robot.createdAt;
+    final mapName = robot.mapName;
+    final robotId = robot.robotId;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Robot Details'),
+      ),
+      body: Container(
+        color: Colors.grey.shade300,
+        margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+        height: 200,
+        child: Row(
+          children: [
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+              padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Robot id: $robotId'),
+                  Text('Robot name: $robotName'),
+                  Text('Map ID: $mapId'),
+                  Text('Map name: $mapName'),
+                  Text('Created at: $createdAt'),
+                  Text('Updated at: $updatedAt'),
+                  Center(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Go back'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -165,6 +221,16 @@ Widget buildRobots(List<Robot> robots) {
                   Text('Map name: $mapName'),
                   Text('Created at: $createdAt'),
                   Text('Updated at: $updatedAt'),
+                  ElevatedButton(
+                    child: const Text('Robot details'),
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const RobotDetailsScreen(),
+                              settings: RouteSettings(arguments: robot)));
+                    },
+                  )
                 ],
               ),
             ),
