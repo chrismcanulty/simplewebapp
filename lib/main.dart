@@ -119,7 +119,6 @@ class _HomeScreenState extends State<HomeScreen> {
             future: futureRobots,
             builder: (context, AsyncSnapshot<List<Robot>> snapshot) {
               // ignore: avoid_print
-              print('snapshotdata!!: $snapshot.data');
               if (snapshot.hasData) {
                 final robots = snapshot.data;
                 return buildRobots(robots!);
@@ -142,15 +141,33 @@ Widget buildRobots(List<Robot> robots) {
     itemCount: robots.length,
     itemBuilder: (context, index) {
       final robot = robots[index];
+      final robotName = robot.robotName;
+      final mapId = robot.mapId;
+      final updatedAt = robot.updatedAt;
+      final createdAt = robot.createdAt;
+      final mapName = robot.mapName;
+      final robotId = robot.robotId;
       return Container(
         color: Colors.grey.shade300,
         margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
         padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
-        height: 100,
-        width: double.maxFinite,
         child: Row(
           children: [
-            Expanded(flex: 3, child: Text(robot.robotName)),
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+              padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Robot id: $robotId'),
+                  Text('Robot name: $robotName'),
+                  Text('Map ID: $mapId'),
+                  Text('Map name: $mapName'),
+                  Text('Created at: $createdAt'),
+                  Text('Updated at: $updatedAt'),
+                ],
+              ),
+            ),
           ],
         ),
       );
@@ -177,7 +194,7 @@ Future<List<Robot>> fetchRobots() async {
   }
 }
 
-// Create class for individual Robot data
+// Create classes for individual Robot data
 
 List<Robot> robotFromJson(String str) =>
     List<Robot>.from(json.decode(str).map((x) => Robot.fromJson(x)));
@@ -373,17 +390,3 @@ class EnumValues<T> {
     return reverseMap;
   }
 }
-
-// class Robot {
-//   int? userId;
-//   int? id;
-//   String? title;
-
-//   Robot({this.userId, this.id, this.title});
-
-//   Robot.fromJson(Map<String, dynamic> json) {
-//     userId = json['userId'];
-//     id = json['id'];
-//     title = json['title'];
-//   }
-// }
