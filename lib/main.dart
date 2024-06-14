@@ -57,7 +57,7 @@ class MyApp extends StatelessWidget {
       GoRoute(
         path: '/robot-details',
         name: 'details',
-        builder: (context, state) => const SecondRoute(),
+        builder: (context, state) => const RobotDetailsScreen(),
         // ManageBudgetEntryScreen(budgetEntry: state.extra as BudgetEntry?,
         // ),
       ),
@@ -76,22 +76,29 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class SecondRoute extends StatelessWidget {
-  const SecondRoute({super.key});
+class RobotDetailsScreen extends StatelessWidget {
+  const RobotDetailsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final robot = ModalRoute.of(context)!.settings.arguments as Robot;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Second Route'),
       ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          child: const Text('Go back!'),
-        ),
+      body: Column(
+        children: [
+          const Text('Example'),
+          Center(
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text(robot.robotName),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -192,10 +199,10 @@ Widget buildRobots(List<Robot> robots) {
                     child: const Text('Robot details'),
                     onPressed: () {
                       Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const SecondRoute()),
-                      );
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const RobotDetailsScreen(),
+                              settings: RouteSettings(arguments: robot)));
                     },
                   )
                 ],
