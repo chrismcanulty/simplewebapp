@@ -3,10 +3,13 @@ import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 import 'package:amplify_authenticator/amplify_authenticator.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
-// import 'package:mqtt_client/mqtt_client.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:mqtt_client/mqtt_client.dart';
 
 import 'amplifyconfiguration.dart';
+import 'data/remote/mqtt/mqtt_client_manager.dart';
 import 'models/ModelProvider.dart';
 
 import 'dart:convert';
@@ -58,7 +61,7 @@ class MyApp extends StatelessWidget {
       GoRoute(
         path: '/robot-details',
         name: 'details',
-        builder: (context, state) => const RobotDetailsScreen(),
+        builder: (context, state) => RobotDetailsScreen(),
         // ManageBudgetEntryScreen(budgetEntry: state.extra as BudgetEntry?,
         // ),
       ),
@@ -77,11 +80,18 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class RobotDetailsScreen extends StatelessWidget {
-  const RobotDetailsScreen({super.key});
+// RobotDetailsScreen
+
+class RobotDetailsScreen extends HookConsumerWidget {
+  final mqtt = MQTTClientManager();
+  var amplify = Amplify;
+  var session;
+  var areaInfo = 'eJpRAiBXpi';
+
+  RobotDetailsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final robot = ModalRoute.of(context)!.settings.arguments as Robot;
     final robotName = robot.robotName;
     final mapId = robot.mapId;
@@ -89,6 +99,59 @@ class RobotDetailsScreen extends StatelessWidget {
     final createdAt = robot.createdAt;
     final mapName = robot.mapName;
     final robotId = robot.robotId;
+    var newCubeRobotStatus = <String>[];
+
+    Future<void> fetchAuthSession() async {
+      try {
+        final cognitoPlugin =
+            amplify.Auth.getPlugin(AmplifyAuthCognito.pluginKey);
+        session = await cognitoPlugin.fetchAuthSession(
+            options: const FetchAuthSessionOptions(forceRefresh: true));
+        final userAttribute = await cognitoPlugin.fetchUserAttributes();
+        for (var attr in userAttribute) {
+          if (attr.userAttributeKey ==
+              const CognitoUserAttributeKey.custom('areainfo')) {
+            areaInfo = attr.value;
+          }
+        }
+        final identityId = session.identityIdResult.value;
+        safePrint("Current user's identity ID: $identityId");
+        await mqtt.connect(session);
+      } on AuthException catch (e) {
+        safePrint('Error retrieving auth session: ${e.message}');
+      }
+
+      print('Connected');
+      mqtt.subscribe('Cube/fromCube/10003/event/AD');
+      mqtt
+          .getMessagesStream()!
+          .listen((List<MqttReceivedMessage<MqttMessage>> c) {
+        final MqttPublishMessage recMess = c[0].payload as MqttPublishMessage;
+        final String pt =
+            MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
+
+        final message = json.decode(pt);
+        print('The message is $message');
+
+        if (message.containsKey('Robot_ID')) {
+          print("test");
+          print(message['Robot_State']);
+          print(newCubeRobotStatus);
+          // newCubeRobotStatus[0] = message['Robot_State'];
+          // 必要に応じてメッセージを処理し、stateを更新する
+          // setState(() {
+          //   // updateCubeNumber();
+          //   newCubeRobotStatus[0] = "test";
+          //   // newCubeRobotStatus;
+          //   // ここにメッセージを受け取ってstateを更新する処理を書く}
+        }
+      });
+    }
+
+    useEffect(() {
+      fetchAuthSession();
+      return null;
+    }, const []);
 
     return Scaffold(
       appBar: AppBar(
@@ -228,7 +291,7 @@ Widget buildRobots(List<Robot> robots) {
                       Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => const RobotDetailsScreen(),
+                              builder: (context) => RobotDetailsScreen(),
                               settings: RouteSettings(arguments: robot)));
                     },
                   )
