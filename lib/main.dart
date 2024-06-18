@@ -134,7 +134,7 @@ class RobotDetailsScreen extends HookConsumerWidget {
         print('The message is $message');
 
         if (message.containsKey('Robot_ID')) {
-          print("test");
+          print("testing!");
           print(message['Robot_State']);
           print(newCubeRobotStatus);
           // newCubeRobotStatus[0] = message['Robot_State'];

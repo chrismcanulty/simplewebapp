@@ -1,0 +1,23 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-simplewebapp-dev-f33b1-authRole",
+      "UnauthRoleArn": "arn:aws:iam::773527868947:role/amplify-simplewebapp-dev-f33b1-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::773527868947:role/amplify-simplewebapp-dev-f33b1-authRole",
+      "Region": "us-east-1",
+      "DeploymentBucketName": "amplify-simplewebapp-dev-f33b1-deployment",
+      "UnauthRoleName": "amplify-simplewebapp-dev-f33b1-unauthRole",
+      "StackName": "amplify-simplewebapp-dev-f33b1",
+      "StackId": "arn:aws:cloudformation:us-east-1:773527868947:stack/amplify-simplewebapp-dev-f33b1/df505180-2cf4-11ef-9348-0e791849dec1",
+      "AmplifyAppId": "d373akrr93pnr0"
+    },
+    "categories": {
+      "auth": {
+        "simplewebapp62dc675d": {}
+      },
+      "api": {
+        "simplewebapp": {}
+      }
+    }
+  }
+}
