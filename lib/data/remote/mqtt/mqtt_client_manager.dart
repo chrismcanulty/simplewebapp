@@ -13,7 +13,7 @@ const urlPath = '/mqtt';
 const port = 443;
 
 // aws
-const policyName = 'p-ishihara';
+const policyName = 'Discovery20000';
 const baseUrl = 'al6jwhaqk4xll-ats.iot.ap-northeast-1.amazonaws.com';
 const clientId = 'iotconsole-c684e8c5-e665-4335-93e3-770b04d33f63';
 

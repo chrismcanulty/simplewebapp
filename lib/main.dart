@@ -3,13 +3,11 @@ import 'package:amplify_auth_cognito/amplify_auth_cognito.dart';
 import 'package:amplify_authenticator/amplify_authenticator.dart';
 import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:mqtt_client/mqtt_client.dart';
+import 'package:mqtt_client/mqtt_browser_client.dart';
 
 import 'amplifyconfiguration.dart';
-import 'data/remote/mqtt/mqtt_client_manager.dart';
 import 'models/ModelProvider.dart';
 
 import 'dart:convert';
@@ -27,7 +25,7 @@ Future<void> _configureAmplify() async {
   try {
     // Create the API plugin.
     //
-    // If `ModelProvider.instance` is not available, try running
+    // If `ModelProvixder.instance` is not available, try running
     // `amplify codegen models` from the root of your project.
     final api = AmplifyAPI(
         options: APIPluginOptions(modelProvider: ModelProvider.instance));
@@ -61,7 +59,7 @@ class MyApp extends StatelessWidget {
       GoRoute(
         path: '/robot-details',
         name: 'details',
-        builder: (context, state) => RobotDetailsScreen(),
+        builder: (context, state) => const RobotDetailsScreen(),
         // ManageBudgetEntryScreen(budgetEntry: state.extra as BudgetEntry?,
         // ),
       ),
@@ -82,128 +80,138 @@ class MyApp extends StatelessWidget {
 
 // RobotDetailsScreen
 
-class RobotDetailsScreen extends HookConsumerWidget {
-  final mqtt = MQTTClientManager();
-  var amplify = Amplify;
-  var session;
-  var areaInfo = 'eJpRAiBXpi';
-
-  RobotDetailsScreen({super.key});
+class RobotDetailsScreen extends StatefulWidget {
+  const RobotDetailsScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final robot = ModalRoute.of(context)!.settings.arguments as Robot;
-    final robotName = robot.robotName;
-    final mapId = robot.mapId;
-    final updatedAt = robot.updatedAt;
-    final createdAt = robot.createdAt;
-    final mapName = robot.mapName;
-    final robotId = robot.robotId;
-    var newCubeRobotStatus = <String>[];
+  _RobotDetailsScreenState createState() => _RobotDetailsScreenState();
+}
 
-    Future<void> fetchAuthSession() async {
-      try {
-        final cognitoPlugin =
-            amplify.Auth.getPlugin(AmplifyAuthCognito.pluginKey);
-        session = await cognitoPlugin.fetchAuthSession(
-            options: const FetchAuthSessionOptions(forceRefresh: true));
-        final userAttribute = await cognitoPlugin.fetchUserAttributes();
-        for (var attr in userAttribute) {
-          if (attr.userAttributeKey ==
-              const CognitoUserAttributeKey.custom('areainfo')) {
-            areaInfo = attr.value;
-          }
-        }
-        final identityId = session.identityIdResult.value;
-        safePrint("Current user's identity ID: $identityId");
-        await mqtt.connect(session);
-      } on AuthException catch (e) {
-        safePrint('Error retrieving auth session: ${e.message}');
-      }
+class _RobotDetailsScreenState extends State<RobotDetailsScreen> {
+  String robotName = '';
+  String robotId = '';
+  late MQTTManager mqttManager;
 
-      print('Connected');
-      mqtt.subscribe('Cube/fromCube/10003/event/AD');
-      mqtt
-          .getMessagesStream()!
-          .listen((List<MqttReceivedMessage<MqttMessage>> c) {
-        final MqttPublishMessage recMess = c[0].payload as MqttPublishMessage;
-        final String pt =
-            MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
+  @override
+  void initState() {
+    super.initState();
+    mqttManager = MQTTManager();
+    mqttManager.initializeMQTTClient();
+    mqttManager.connect();
+  }
 
-        final message = json.decode(pt);
-        print('The message is $message');
+  @override
+  void dispose() {
+    mqttManager.disconnect();
+    super.dispose();
+  }
 
-        if (message.containsKey('Robot_ID')) {
-          print("testing!");
-          print(message['Robot_State']);
-          print(newCubeRobotStatus);
-          // newCubeRobotStatus[0] = message['Robot_State'];
-          // 必要に応じてメッセージを処理し、stateを更新する
-          // setState(() {
-          //   // updateCubeNumber();
-          //   newCubeRobotStatus[0] = "test";
-          //   // newCubeRobotStatus;
-          //   // ここにメッセージを受け取ってstateを更新する処理を書く}
-        }
-      });
-    }
-
-    useEffect(() {
-      fetchAuthSession();
-      return null;
-    }, const []);
-
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Robot Details'),
+        title: const Text('MQTT JSON Data'),
       ),
-      body: Container(
-        color: Colors.grey.shade300,
-        margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
-        height: 200,
-        child: Row(
-          children: [
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-              padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 5),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Robot id: $robotId'),
-                  Text('Robot name: $robotName'),
-                  Text('Map ID: $mapId'),
-                  Text('Map name: $mapName'),
-                  Text('Created at: $createdAt'),
-                  Text('Updated at: $updatedAt'),
-                  Center(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: const Text('Go back'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+      body: Center(
+        child: StreamBuilder(
+          stream: mqttManager.messageStream,
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              final data = snapshot.data.toString();
+              final decodedData = jsonDecode(data);
+              if (decodedData is List && decodedData.isNotEmpty) {
+                final firstRobot = decodedData[0];
+                robotName = firstRobot['robotName'] ?? '';
+                robotId = firstRobot['robotId'] ?? '';
+              }
+            }
+            return robotName.isNotEmpty && robotId.isNotEmpty
+                ? Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text('Robot Name: $robotName'),
+                      Text('Robot ID: $robotId'),
+                    ],
+                  )
+                : const CircularProgressIndicator();
+          },
         ),
       ),
     );
   }
 }
 
-class LoadingScreen extends StatelessWidget {
-  const LoadingScreen({super.key});
+enum MQTTAppConnectionState { connected, disconnected, connecting }
 
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
+class MQTTManager {
+  MQTTAppConnectionState _currentState = MQTTAppConnectionState.disconnected;
+  MqttBrowserClient? _client;
+  final String _identifier = 'flutter_client';
+  final String _host = 'broker.hivemq.com';
+  final String _topic = 'robot/data';
+  final StreamController<String> _messageStreamController =
+      StreamController<String>();
+
+  Stream<String> get messageStream => _messageStreamController.stream;
+
+  void initializeMQTTClient() {
+    _client = MqttBrowserClient('ws://$_host:8000/mqtt', _identifier);
+    _client!.setProtocolV311();
+    _client!.port = 8000;
+    _client!.keepAlivePeriod = 60;
+    _client!.logging(on: true);
+    _client!.onDisconnected = onDisconnected;
+    _client!.onConnected = onConnected;
+    _client!.onSubscribed = onSubscribed;
+    _client!.onUnsubscribed = onUnsubscribed;
+
+    final MqttConnectMessage connMess = MqttConnectMessage()
+        .withClientIdentifier(_identifier)
+        .withWillTopic('willTopic')
+        .withWillMessage('My Will message')
+        .startClean()
+        .withWillQos(MqttQos.atLeastOnce);
+    _client!.connectionMessage = connMess;
+  }
+
+  void connect() async {
+    try {
+      await _client!.connect();
+      _currentState = MQTTAppConnectionState.connected;
+    } on Exception catch (e) {
+      print('Error connecting: $e');
+      disconnect();
+    }
+  }
+
+  void disconnect() {
+    _client!.disconnect();
+    _currentState = MQTTAppConnectionState.disconnected;
+  }
+
+  void onSubscribed(String topic) {
+    print('Subscribed to $topic');
+    _client!.updates!.listen((List<MqttReceivedMessage<MqttMessage>> c) {
+      final MqttPublishMessage recMess = c[0].payload as MqttPublishMessage;
+      final String message =
+          MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
+      _messageStreamController.add(message);
+    });
+  }
+
+  void onUnsubscribed(String? topic) {
+    print('Unsubscribed from $topic');
+  }
+
+  void onDisconnected() {
+    print('Disconnected');
+    _currentState = MQTTAppConnectionState.disconnected;
+  }
+
+  void onConnected() {
+    print('Connected');
+    _currentState = MQTTAppConnectionState.connected;
+    _client!.subscribe(_topic, MqttQos.atMostOnce);
   }
 }
 
@@ -291,7 +299,7 @@ Widget buildRobots(List<Robot> robots) {
                       Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => RobotDetailsScreen(),
+                              builder: (context) => const RobotDetailsScreen(),
                               settings: RouteSettings(arguments: robot)));
                     },
                   )
